@@ -1,0 +1,63 @@
+app-id: org.amule.aMule
+build-extension: false
+
+runtime: org.freedesktop.Platform
+runtime-version: "23.08"
+sdk: org.freedesktop.Sdk
+command: amule
+
+finish-args:
+  - --share=network
+  - --filesystem=home
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --env=WXSUPPRESS_SIZER_FLAGS_CHECK=1
+
+modules:
+  - name: wxwidgets
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.4/wxWidgets-3.2.4.tar.bz2
+        sha256: 0640e1ab716db5af2ecb7389dbef6138d7679261fbff730d23845ba838ca133e
+    config-opts:
+      - --with-gtk=3
+      - --enable-unicode
+      - --disable-debug
+      - --without-opengl
+    cleanup:
+      - /bin
+      - /share/man
+  - name: cryptopp
+    buildsystem: simple
+    build-commands:
+      - make -j$(nproc)
+      - make install PREFIX=/app
+    sources:
+      - type: archive
+        url: https://github.com/weidai11/cryptopp/archive/refs/tags/CRYPTOPP_8_8_0.tar.gz
+        sha256: f8b8f632533b279ee297694e651e9204824bba6022ce66e60ebebb08b551fe7a 
+    cleanup:
+      - /share
+  - name: amule
+    buildsystem: autotools
+    build-options:
+      env:
+        ac_cv_header_bfd_h: "no"
+        ac_cv_header_ansidecl_h: "no"
+        mule_cv_lib_bfd: "no"
+    sources:
+      - type: archive
+        url: https://downloads.sourceforge.net/project/amule/aMule/2.3.3/aMule-2.3.3.tar.gz
+        sha256: fa85a054153c9787fce2d35a5c5590a3d390429b8fa0c5d8f9ea69e9904c7b72
+    config-opts:
+      - --disable-debug
+      - --enable-monolithic
+      - --enable-amule-gui
+      - --disable-upnp
+      - --with-wx-config=/app/bin/wx-config
+      - --with-crypto-prefix=/app
+    post-install:
+      - mv /app/share/applications/amule.desktop /app/share/applications/org.amule.aMule.desktop || true
+      - mv /app/share/applications/amulegui.desktop /app/share/applications/org.amule.aMule.desktop || true
